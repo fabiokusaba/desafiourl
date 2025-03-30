@@ -1,6 +1,7 @@
 package com.fabiokusaba.encurtador_url.service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
@@ -27,6 +28,28 @@ public class UrlService {
         urlRepository.save(url);
 
         return shortUrl;
+    }
+
+    public Optional<Url> getOriginalUrl(String shortUrl) {
+        Optional<Url> urlOptional = urlRepository.findByShortUrl(shortUrl);
+
+        // Verificação se está presente no banco
+        if (urlOptional.isPresent()) {
+            // Uma vez presente pego os dados
+            Url url = urlOptional.get();
+
+            // Faço a verificação do tempo de expiração
+            if (url.getExpirationDate().isAfter(LocalDateTime.now())) {
+                // Se não expirou retorno a url
+                return Optional.of(url);
+            } else {
+                // Se expirou removo do banco
+                urlRepository.delete(url);
+            }
+        }
+
+        // Se não encontrou retorno vazio
+        return Optional.empty();
     }
 
     private String generateShortUrl() {
